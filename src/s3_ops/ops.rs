@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{str::from_utf8, sync::Arc};
 
 use aws_config::BehaviorVersion;
 use aws_sdk_s3 as s3;
@@ -81,7 +81,7 @@ impl S3Client {
         &self,
         bucket_name: &str,
         file_name: &str,
-    ) -> Result<GetObjectOutput, Box<dyn std::error::Error>> {
+    ) -> Result<String, Box<dyn std::error::Error>> {
         let get_result = self
             .s3_client
             .get_object()
@@ -89,7 +89,11 @@ impl S3Client {
             .bucket(bucket_name)
             .send()
             .await?;
-        Ok(get_result)
+
+            let bytes = get_result.body.collect().await?.into_bytes();
+            let text_content = from_utf8(&bytes)?;
+            println!("{:?}", text_content);
+        Ok(text_content.to_string())
     }
 }
 

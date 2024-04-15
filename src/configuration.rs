@@ -7,6 +7,11 @@ pub struct S3Settings {
     pub access_key: String,
     pub secret_key: String,
 }
+#[derive(serde::Deserialize)]
+pub struct ServerSettings {
+    pub port: String,
+    pub addr: String,
+}
 
 pub fn get_s3_configuration() -> Result<(), config::ConfigError> {
     let settings = config::Config::builder()
@@ -22,4 +27,21 @@ pub fn get_s3_configuration() -> Result<(), config::ConfigError> {
 
 
         Ok(())
+}
+
+pub fn get_server_configuration() -> Result<ServerSettings, config::ConfigError> {
+    let settings = config::Config::builder()
+        .add_source(config::File::new(
+            "configuration.yaml",
+            config::FileFormat::Yaml
+        )).build()?;
+
+
+       let server_settings = ServerSettings{
+            port: settings.get_string("server.port")?,
+            addr: format!("0.0.0.0:{}", settings.get_string("server.port")?)
+        };
+
+        
+        Ok(server_settings)
 }
