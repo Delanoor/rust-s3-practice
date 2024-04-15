@@ -1,26 +1,25 @@
 use std::sync::Arc;
 
-use aws_config::{load_defaults, BehaviorVersion};
+use aws_config::BehaviorVersion;
 use aws_sdk_s3 as s3;
-use axum::{extract::Path, http::StatusCode, response::IntoResponse, Json};
+use axum::{ http::StatusCode, response::IntoResponse, Json};
 use s3::{
     operation::{get_object::GetObjectOutput, put_object::PutObjectOutput},
     primitives::ByteStream,
     types::{BucketLocationConstraint, CreateBucketConfiguration},
 };
-use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
-struct S3Params {
-    bucket_name: Option<String>,
-}
+
+
 #[derive(Clone)]
 pub struct S3Client {
     pub s3_client: Arc<s3::Client>,
 }
 impl S3Client {
     pub async fn new() -> Self {
-        let config = load_defaults(BehaviorVersion::latest()).await;
+        // let config = load_defaults(BehaviorVersion::latest()).await;
+        let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
+    
         let s3_client = s3::Client::new(&config);
         Self {
             s3_client: Arc::new(s3_client),
@@ -94,9 +93,3 @@ impl S3Client {
     }
 }
 
-// pub async fn handler_s3(params: Query<S3Params>) -> impl IntoResponse {
-//     let name = params.bucket_name.as_deref().unwrap();
-
-//     println!("-->> handler s3 - {name:?}");
-
-// }
