@@ -2,7 +2,7 @@ use std::{str::from_utf8, sync::Arc};
 
 use aws_config::BehaviorVersion;
 use aws_sdk_s3 as s3;
-use axum::{ http::StatusCode, response::IntoResponse, Json};
+use axum::{ http::StatusCode, response::IntoResponse, Extension, Json};
 use s3::{
     operation::{get_object::GetObjectOutput, put_object::PutObjectOutput},
     primitives::ByteStream,
@@ -26,7 +26,7 @@ impl S3Client {
         }
     }
 
-    pub async fn get_buckets(&self) -> impl IntoResponse {
+    pub async fn get_buckets(&self) -> Vec<String> {
         let list_buckets = self.s3_client.list_buckets().send().await;
         let buckets = list_buckets.unwrap().buckets.unwrap();
 
@@ -35,9 +35,9 @@ impl S3Client {
             bucket_names.push(bucket.name.unwrap());
         }
 
-        Json(bucket_names)
+        bucket_names
     }
-
+ 
     pub async fn create_bucket(&self, name: &str) -> Result<impl IntoResponse, StatusCode> {
         let cfg = CreateBucketConfiguration::builder()
             .location_constraint(BucketLocationConstraint::from(

@@ -22,15 +22,8 @@ pub async fn run_server(addr: &str) {
 async fn list_buckets(
     Extension(s3_client): Extension<S3Client>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    let list_buckets = s3_client.s3_client.list_buckets().send().await;
-    let buckets = list_buckets.unwrap().buckets.unwrap();
-
-    let mut bucket_names = vec![];
-    for bucket in buckets {
-        bucket_names.push(bucket.name.unwrap());
-    }
-
-    Ok(Json(bucket_names))
+    let list_buckets = s3_client.get_buckets().await;
+    Ok(Json(list_buckets))
 }
 
 async fn create_bucket(
@@ -72,6 +65,7 @@ async fn get_obj(
 async fn get_routes() -> Router {
     let s3_client = S3Client::new().await;
     Router::new()
+        // .route("/s3/buckets", get(list_buckets))
         .route("/s3/buckets", get(list_buckets))
         // .route("/s3/:id", get())
         .route("/s3/buckets/:bucket_name", post(create_bucket))
