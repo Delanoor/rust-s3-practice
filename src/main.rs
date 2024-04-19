@@ -1,5 +1,6 @@
 mod s3_ops;
 mod server;
+mod transcribe_ops;
 use aws_s3_practice::configuration::{get_aws_configuration, get_server_configuration};
 use server::run_server;
 
