@@ -1,15 +1,11 @@
 use aws_config::BehaviorVersion;
 use aws_sdk_transcribe as transcribe;
-use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
 
-use chrono::offset::Utc;
-use chrono::DateTime;
 use tokio::time;
+use uuid::Uuid;
 
-use std::{str::from_utf8, sync::Arc};
-use transcribe::types::{
-    LanguageCode, Media, Transcript, TranscriptionJob, TranscriptionJobStatus,
-};
+use std::sync::Arc;
+use transcribe::types::{LanguageCode, Media, TranscriptionJobStatus};
 
 #[derive(Clone)]
 pub struct TranscribeClient {
@@ -26,15 +22,18 @@ impl TranscribeClient {
             client: Arc::new(client),
         }
     }
-    pub async fn get_transcription(&self) -> Result<String, Box<dyn std::error::Error>> {
-        const FILE_URI: &str = "https://hwn-rust-test.s3.ap-northeast-2.amazonaws.com/ed0cef11-4493-4bba-87d4-5dffbf1725f1.webm";
-        let media = Some(Media::builder().media_file_uri(FILE_URI).build());
+    pub async fn get_transcription(
+        &self,
+        file_uri: &str,
+    ) -> Result<String, Box<dyn std::error::Error>> {
+        // const FILE_URI: &str = "https://hwn-rust-test.s3.ap-northeast-2.amazonaws.com/ed0cef11-4493-4bba-87d4-5dffbf1725f1.webm";
+        let media = Some(Media::builder().media_file_uri(file_uri).build());
 
         //let time: DateTime<Utc> = std::time::SystemTime::now().into();
         //let job_name = format!("test_{time}");
 
-        let job_name = "HEassLO".to_string();
-        let transcription_result = self
+        let job_name = Uuid::new_v4().to_string();
+        self
             .client
             .start_transcription_job()
             .transcription_job_name(&job_name)
@@ -69,23 +68,25 @@ impl TranscribeClient {
                 .send()
                 .await?;
 
-            transcription_res = new_res.clone();
 
-            in_progress = new_res
+            in_progress = new_res.clone()
                 .transcription_job
                 .unwrap()
                 .transcription_job_status
-                .unwrap()
-                == TranscriptionJobStatus::InProgress;
+                .unwrap()   == TranscriptionJobStatus::InProgress;
+              
+
+
+                println!("Currently: {:?}", new_res.clone());
+                transcription_res = new_res;
         }
 
-        println!("Currently: {:?}", transcription_res);
+        // println!("Currently: {:?}", transcription_res);
 
-        let content = transcription_result.transcription_job.unwrap().media;
+        let content = transcription_res.transcription_job.unwrap().transcript.unwrap().transcript_file_uri;
 
-        println!("{:?}", content);
         if let Some(res) = content {
-            Ok(res.media_file_uri.unwrap())
+            Ok(res)
         } else {
             Err("Error occured".into())
         }

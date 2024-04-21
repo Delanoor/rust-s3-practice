@@ -50,6 +50,11 @@ struct FilePayload {
     file_name: String,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct TranscribePayload {
+    file_uri: String,
+}
+
 async fn get_obj(
     Extension(s3_client): Extension<S3Client>,
     Path(bucket_name): Path<String>,
@@ -66,9 +71,10 @@ async fn get_obj(
 
 async fn get_transcription(
     Extension(transcribe_client): Extension<TranscribeClient>,
-    payload: Json<FilePayload>,
+    payload: Json<TranscribePayload>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    let result = transcribe_client.get_transcription().await;
+    let file_uri = &payload.file_uri;
+    let result = transcribe_client.get_transcription(&file_uri).await;
     if result.is_ok() {
         println!("{:?}", result);
         Ok(result.unwrap())
